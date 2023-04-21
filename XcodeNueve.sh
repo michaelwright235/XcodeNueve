@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/zsh
 
 # XcodeNueve: Modify Xcode 9.4.1's toolchain to run on 10.15+
 
