@@ -19,6 +19,11 @@ check_sha256() {
     fi
 }
 
+quote () {
+    printf %s "$1" | sed "s/'/\\\\'/g;1s/^/'/;\$s/\$/'/"
+}  
+
+
 XCODE="/Applications/Xcode9.app"
 IDENTITY="XcodeSigner"
 
@@ -107,6 +112,10 @@ rm -rf $PY_TMP_DIR
 
 # Replace Python 2.7 system dependency with a local one
 echo "40727061 74682F50 7974686F 6E2E6672 616D6577 6F726B2F 2E2E2F50 7974686F 6E2E6672 616D6577 6F726B2F 56657273 696F6E73 2F322E37 2F507974 686F6E" |  xxd -r -p -s 0x9e8 - "$XCODE/Contents/SharedFrameworks/LLDB.framework/Versions/A/LLDB"
+
+# Fix ipatool python dependency (line no. 139)
+IPATOOL_FIX="    return CmdSpec.new(locate_tool(\"python\", [__dir__ + \"/../../../SharedFrameworks/Python.framework/Versions/2.7/bin\"]), [\"-c\", \"import sys; import unicodedata; print(unicodedata.normalize('NFC', sys.argv[1].decode('utf-8')) == unicodedata.normalize('NFC', sys.argv[2].decode('utf-8')))\", self, other]).run(0, false, true).strip == \"True\""
+perl -l -p -e "print `quote "${IPATOOL_FIX}"` if $. == 139" "$XCODE/Contents/Developer/usr/bin/ipatool" > "$XCODE/Contents/Developer/usr/bin/ipatool"
 
 codesign -f -s $IDENTITY "$XCODE/Contents/SharedFrameworks/DVTKit.framework"
 codesign -f -s $IDENTITY "$XCODE"
