@@ -93,11 +93,13 @@ echo "66909066 9090" |  xxd -r -p -s 0xD0EA1 - "$XCODE/Contents/SharedFrameworks
 # Copy libtool from the (presumably newer) installed Xcode.app, to fix crashes on Monterey
 if [ -f "`xcode-select -p`/Toolchains/XcodeDefault.xctoolchain/usr/bin/libtool" ]; then
     cp -p "`xcode-select -p`/Toolchains/XcodeDefault.xctoolchain/usr/bin/libtool" "$XCODE/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/libtool"
+    echo "✅  Libtool has been replaced with a version from a newer Xcode"
 else
     if [ -f "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/libtool" ]; then
         cp -p "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/libtool" "$XCODE/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/libtool"
+        echo "✅  Libtool has been replaced with a version from a newer Xcode"
     else
-        echo "$0: Unable to find another Xcode to copy libtool from. Beware, Xcode 9.4.1's libtool sometimes crashes on Monterey."
+        echo "❌  Unable to find another Xcode to copy libtool from. Beware, Xcode 9.4.1's libtool sometimes crashes on Monterey."
     fi
 fi
 
