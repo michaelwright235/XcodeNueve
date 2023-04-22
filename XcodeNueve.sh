@@ -224,8 +224,10 @@ replace_pngcrush() {
     if [ -f "$pngcrush_extracted_zip/pcr010813/pngcrush" ]; then
         cp -p "$pngcrush_extracted_zip/pcr010813/pngcrush" "$XCODE/Contents/Developer/usr/bin/pngcrush"
         cp -p "$pngcrush_extracted_zip/pcr010813/pngcrush" "$XCODE/Contents/Developer/Platforms/iPhoneOS.platform/Developer/usr/bin/pngcrush"
+        cp -p "$pngcrush_extracted_zip/pcr010813/pngcrush" "$XCODE/Contents/Developer/Platforms/WatchOS.platform/Developer/usr/bin/pngcrush"
         chmod +x "$XCODE/Contents/Developer/usr/bin/pngcrush"
         chmod +x "$XCODE/Contents/Developer/Platforms/iPhoneOS.platform/Developer/usr/bin/pngcrush"
+        chmod +x "$XCODE/Contents/Developer/Platforms/WatchOS.platform/Developer/usr/bin/pngcrush"
         echo "✅  Pngcrush has been successfully compiled and replaced"
         result=0
     else
@@ -239,9 +241,13 @@ replace_pngcrush() {
 # Copy pngcrush from the (presumably newer) installed Xcode.app
 if [ -f "`xcode-select -p`/usr/bin/pngcrush" ]; then
     cp -p "`xcode-select -p`/usr/bin/pngcrush" "$XCODE/Contents/Developer/usr/bin/pngcrush"
+    cp -p "`xcode-select -p`/usr/bin/pngcrush" "$XCODE/Contents/Developer/Platforms/iPhoneOS.platform/Developer/usr/bin/pngcrush"
+    cp -p "`xcode-select -p`/usr/bin/pngcrush" "$XCODE/Contents/Developer/Platforms/WatchOS.platform/Developer/usr/bin/pngcrush"
 else
     if [ -f "/Applications/Xcode.app/Contents/Developer/usr/bin/pngcrush" ]; then
         cp -p "/Applications/Xcode.app/Contents/Developer/usr/bin/pngcrush" "$XCODE/Contents/Developer/usr/bin/pngcrush"
+        cp -p "/Applications/Xcode.app/Contents/Developer/usr/bin/pngcrush" "$XCODE/Contents/Developer/Platforms/iPhoneOS.platform/Developer/usr/bin/pngcrush"
+        cp -p "/Applications/Xcode.app/Contents/Developer/usr/bin/pngcrush" "$XCODE/Contents/Developer/Platforms/WatchOS.platform/Developer/usr/bin/pngcrush"
         echo "✅  Pngcrush has been replaced with a version from a newer Xcode"
     else
         echo "❌  Unable to find another Xcode to copy pngcrush from. Trying to download and compile it from sources..."
