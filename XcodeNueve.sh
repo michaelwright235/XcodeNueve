@@ -21,8 +21,16 @@ check_sha256() {
 
 quote () {
     printf %s "$1" | sed "s/'/\\\\'/g;1s/^/'/;\$s/\$/'/"
-}  
+}
 
+remove_dir_if_exists() {
+    if [ -d "$1" ]; then
+        rm -rf "$1"
+    fi
+}
+
+PNGCRUSH_URL="https://altushost-swe.dl.sourceforge.net/project/pmt/pngcrush/1.8.13/pngcrush-1.8.13.zip"
+PYTHON_URL="https://www.python.org/ftp/python/2.7.18/python-2.7.18-macosx10.9.pkg"
 
 XCODE="/Applications/Xcode9.app"
 IDENTITY="XcodeSigner"
@@ -79,7 +87,7 @@ echo "4E534365 6C6C2E5F 63466C61 6773" |  xxd -r -p -s 0x899801 - "$XCODE/Conten
 echo "64656C65 67617465" |  xxd -r -p -s 0x7bee08 - "$XCODE/Contents/PlugIns/IDEInterfaceBuilderKit.framework/Versions/A/IDEInterfaceBuilderKit"
 echo "64656C65 67617465" |  xxd -r -p -s 0x899894 - "$XCODE/Contents/PlugIns/IDEInterfaceBuilderKit.framework/Versions/A/IDEInterfaceBuilderKit"
 
-# Fix -[DVTSearchFieldCell willDrawVibrantly] method of DVTKit which crashes the whole UI
+# Fix -[DVTSearchFieldCell willDrawVibrantly] method of DVTKit that crashes the whole UI
 echo "66909066 90906690 90" |  xxd -r -p -s 0xB63AE - "$XCODE/Contents/SharedFrameworks/DVTKit.framework/Versions/A/DVTKit"
 
 # Fix build/clean/test/etc square alerts in -[DVTBezelAlertPanel effectViewForBezel] (uses undocumented & outdated method)
@@ -97,25 +105,156 @@ else
     fi
 fi
 
-echo "Downloading Python 2.7.18..." 
-echo "Note: It's NOT being installed globally, only in Xcode 9 folder" 
+python2_install() {
+    echo "Downloading Python 2.7.18..." 
+    # Download Python 2.7.18 installer to use a part of it for making a working dependency
+    local python_tmp_dir="$TMPDIR/python2.7-installer"
+    local python_install_dir="/Library/Frameworks/Python.framework/"
+    # Delete previous temp dir if it exists
+    remove_dir_if_exists "$python_tmp_dir"
+    mkdir $python_tmp_dir
+    curl -o "$python_tmp_dir/python2.pkg" "$PYTHON_URL"
+    if ! [ $? = 0 ]; then
+        echo "❌  Something went wrong during downloading Python archive."
+        return 1
+    fi
+    xar -C $python_tmp_dir -xf "$python_tmp_dir/python2.pkg"
+    if [ -d "/Library/Frameworks/Python.framework/" ]; then
+        # If some Python version is alreary installed,
+        # we copy Python 2.7 files to Python.framework/Versions/2.7/
+        python_install_dir="/Library/Frameworks/Python.framework/Versions/2.7/"
+        payload_extracted="$python_tmp_dir/Python_Framework.pkg/Payload/extracted"
+        mkdir "$payload_extracted"
+        tar xvf "$python_tmp_dir/Python_Framework.pkg/Payload" -C "$payload_extracted" &> /dev/null
+        sudo -- zsh -c <<EOF
+        mkdir "$python_install_dir"
+        mv "$payload_extracted/Versions/2.7/*" "$python_install_dir"
+EOF
+        if ! [ $? = 0 ]; then
+            echo "❌  Something went wrong during installing Python 2."
+            return 1
+        fi
+        echo "✅  Python 2 Framework is successfully installed"
+    else
+        # If Python isn't installed,
+        # we copy all Python 2.7 files to Python.framework
+        sudo -- zsh -c <<EOF
+        mkdir "$python_install_dir"
+        tar xvf "$python_tmp_dir/Python_Framework.pkg/Payload" -C $python_install_dir &> /dev/null
+EOF
+    fi
+    if ! [ $? = 0 ]; then
+        echo "❌  Something went wrong during installing Python 2."
+        return 1
+    fi
+    remove_dir_if_exists "$python_tmp_dir" # remove temp dir
+    return 0
+}
 
-# Download Python 2.7.18 installer to use a part of it for making a working dependency
-PY_TMP_DIR="$TMPDIR/python2.7-installer"
-XCODE_PY_DIR="$XCODE/Contents/SharedFrameworks/Python.framework"
-mkdir $PY_TMP_DIR
-curl -o "$PY_TMP_DIR/python2.pkg" "https://www.python.org/ftp/python/2.7.18/python-2.7.18-macosx10.9.pkg"
-xar -C $PY_TMP_DIR -xf "$PY_TMP_DIR/python2.pkg"
-mkdir $XCODE_PY_DIR
-tar xvf "$PY_TMP_DIR/Python_Framework.pkg/Payload" -C $XCODE_PY_DIR &> /dev/null
-rm -rf $PY_TMP_DIR
+python2() {
+    # Building Python 2 from sources and patching Xcode's executables
+    # to work with a local copy of it would've solve this problem.
+    # But building it is really painful on modern macOSs so it's easier to
+    # just download it and put inside of /Library/Frameworks/Python.framework/ directory.
+    echo "❓ Do you want to install Python 2 Framework?"
+    echo "Doing that will likely decrease your system security \
+    because Python 2 is not being maintainted since 2020. If you don't install it, \
+    Xcode 9 UI and ipatool (may be needed to build iOS apps) won't work. \
+    To make build tools work LLDB.framework and DebuggerLLDB.ideplugin will be deleted. \n\
+    If you choose to install, don't forget to delete it when you're done \
+    (/Library/Frameworks/Python.framework/Versions/2.7/)."
+    echo "1️⃣  Install Python 2 Framework (root privilages might be required)"
+    echo "2️⃣  Don't install Python 2 Framework"
 
-# Replace Python 2.7 system dependency with a local one
-echo "40727061 74682F50 7974686F 6E2E6672 616D6577 6F726B2F 2E2E2F50 7974686F 6E2E6672 616D6577 6F726B2F 56657273 696F6E73 2F322E37 2F507974 686F6E" |  xxd -r -p -s 0x9e8 - "$XCODE/Contents/SharedFrameworks/LLDB.framework/Versions/A/LLDB"
+    local result=0
+    while :
+    do 
+        read "python2_user_choise?Choise: "
+        if [ "$python2_user_choise" = "1" ]; then
+            python2_install
+            result=$?
+            break
+        fi
+        if [ "$python2_user_choise" = "2" ]; then
+            # Delete components depending on Python 2 to make build tools work
+            rm -rf "$XCODE/Contents/PlugIns/DebuggerLLDB.ideplugin"
+            rm -rf "$XCODE/Contents/SharedFrameworks/LLDB.framework"
+            result=0
+            break
+        fi
+    done
+    return "$result"
+}
 
-# Fix ipatool python dependency (line no. 139)
-IPATOOL_FIX="    return CmdSpec.new(locate_tool(\"python\", [__dir__ + \"/../../../SharedFrameworks/Python.framework/Versions/2.7/bin\"]), [\"-c\", \"import sys; import unicodedata; print(unicodedata.normalize('NFC', sys.argv[1].decode('utf-8')) == unicodedata.normalize('NFC', sys.argv[2].decode('utf-8')))\", self, other]).run(0, false, true).strip == \"True\""
-perl -l -p -e "print `quote "${IPATOOL_FIX}"` if $. == 139" "$XCODE/Contents/Developer/usr/bin/ipatool" > "$XCODE/Contents/Developer/usr/bin/ipatool"
+if [ -d "/Library/Frameworks/Python.framework/Versions/2.7" ]; then
+    echo "✅  Python 2 Framework is already installed"
+else
+    while :
+    do
+        python2
+        install_result=$?
+        while ! [ install_result = 0 ]:
+        do 
+            echo "❌  Python 2 installation failed. Do you want to try again? (y/n)"
+            read "python2_install_again?Choise: "
+            if [ "$python2_install_again" = "y" ]
+                python2
+                install_result=$?
+            fi
+            if [ "$python2_install_again" = "n" ]
+                install_result=0
+            fi
+    done
+fi
+
+# Replace old pngcrush util (i386 only) with a new version (x86_64)
+replace_pngcrush() {
+    local pngcrush_tmp_dir="$TMPDIR/pngcrush-sources"
+    local pngcrush_tmp_zip="$pngcrush_tmp_dir/pngcrush.zip"
+    local pngcrush_extracted_zip="$pngcrush_tmp_dir/extracted/"
+    local result=0
+    # Delete previous temp dir if it exists
+    remove_dir_if_exists "$pngcrush_tmp_dir"
+    mkdir "$pngcrush_tmp_dir"
+    curl -o "$pngcrush_tmp_zip" "$PNGCRUSH_URL"
+    if ! [ $? = 0 ]; then
+        echo "❌  Something went wrong during downloading pngcrush sources."
+        return 1
+    fi
+    mkdir "$pngcrush_tmp_dir/extracted" 
+    unzip "$pngcrush_tmp_zip" -d "$pngcrush_extracted_zip"
+    arch -x86_64 make -C "$pngcrush_extracted_zip/pcr010813/"
+    if [ -f "$pngcrush_extracted_zip/pcr010813/pngcrush" ]; then
+        yes | cp -rf "$pngcrush_extracted_zip/pcr010813/pngcrush" "$XCODE/Contents/Developer/usr/bin/pngcrush"
+        yes | cp -rf "$pngcrush_extracted_zip/pcr010813/pngcrush" "$XCODE/Contents/Developer/Platforms/iPhoneOS.platform/Developer/usr/bin/pngcrush"
+        chmod +x "$XCODE/Contents/Developer/usr/bin/pngcrush"
+        chmod +x "$XCODE/Contents/Developer/Platforms/iPhoneOS.platform/Developer/usr/bin/pngcrush"
+        echo "✅  Pngcrush has been successfully compiled and replaced"
+        result=0
+    else
+        echo "❌  Something went wrong during compiling pngcrush sources"
+        result=1
+    fi
+    remove_dir_if_exists "$pngcrush_tmp_dir"
+    return "$result"
+}
+
+while :
+do
+    replace_pngcrush
+    install_result=$?
+    while ! [ install_result = 0 ]:
+    do 
+        echo "❌  Pngcrush installation failed. Do you want to try again? (y/n)"
+        read "pngcrush_install_again?Choise: "
+        if [ "$pngcrush_install_again" = "y" ]
+            replace_pngcrush
+            install_result=$?
+        fi
+        if [ "$pngcrush_install_again" = "n" ]
+            install_result=0
+        fi
+done
 
 codesign -f -s $IDENTITY "$XCODE/Contents/SharedFrameworks/DVTKit.framework"
 codesign -f -s $IDENTITY "$XCODE"
