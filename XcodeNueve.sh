@@ -19,10 +19,6 @@ check_sha256() {
     fi
 }
 
-quote () {
-    printf %s "$1" | sed "s/'/\\\\'/g;1s/^/'/;\$s/\$/'/"
-}
-
 remove_dir_if_exists() {
     if [ -d "$1" ]; then
         rm -rf "$1"
@@ -208,6 +204,7 @@ else
 fi
 
 # Replace old pngcrush util (i386 only) with a new version (x86_64)
+# by compiling it from sources
 replace_pngcrush() {
     local pngcrush_tmp_dir="$TMPDIR/pngcrush-sources"
     local pngcrush_tmp_zip="$pngcrush_tmp_dir/pngcrush.zip"
@@ -225,8 +222,8 @@ replace_pngcrush() {
     unzip "$pngcrush_tmp_zip" -d "$pngcrush_extracted_zip"
     arch -x86_64 make -C "$pngcrush_extracted_zip/pcr010813/"
     if [ -f "$pngcrush_extracted_zip/pcr010813/pngcrush" ]; then
-        yes | cp -rf "$pngcrush_extracted_zip/pcr010813/pngcrush" "$XCODE/Contents/Developer/usr/bin/pngcrush"
-        yes | cp -rf "$pngcrush_extracted_zip/pcr010813/pngcrush" "$XCODE/Contents/Developer/Platforms/iPhoneOS.platform/Developer/usr/bin/pngcrush"
+        cp -p "$pngcrush_extracted_zip/pcr010813/pngcrush" "$XCODE/Contents/Developer/usr/bin/pngcrush"
+        cp -p "$pngcrush_extracted_zip/pcr010813/pngcrush" "$XCODE/Contents/Developer/Platforms/iPhoneOS.platform/Developer/usr/bin/pngcrush"
         chmod +x "$XCODE/Contents/Developer/usr/bin/pngcrush"
         chmod +x "$XCODE/Contents/Developer/Platforms/iPhoneOS.platform/Developer/usr/bin/pngcrush"
         echo "✅  Pngcrush has been successfully compiled and replaced"
@@ -239,22 +236,33 @@ replace_pngcrush() {
     return "$result"
 }
 
-while :
-do
-    replace_pngcrush
-    install_result=$?
-    while ! [ install_result = 0 ]:
-    do 
-        echo "❌  Pngcrush installation failed. Do you want to try again? (y/n)"
-        read "pngcrush_install_again?Choise: "
-        if [ "$pngcrush_install_again" = "y" ]
+# Copy pngcrush from the (presumably newer) installed Xcode.app
+if [ -f "`xcode-select -p`/usr/bin/pngcrush" ]; then
+    cp -p "`xcode-select -p`/usr/bin/pngcrush" "$XCODE/Contents/Developer/usr/bin/pngcrush"
+else
+    if [ -f "/Applications/Xcode.app/Contents/Developer/usr/bin/pngcrush" ]; then
+        cp -p "/Applications/Xcode.app/Contents/Developer/usr/bin/pngcrush" "$XCODE/Contents/Developer/usr/bin/pngcrush"
+        echo "✅  Pngcrush has been replaced with a version from a newer Xcode"
+    else
+        echo "❌  Unable to find another Xcode to copy pngcrush from. Trying to download and compile it from sources..."
+        while :
+        do
             replace_pngcrush
             install_result=$?
-        fi
-        if [ "$pngcrush_install_again" = "n" ]
-            install_result=0
-        fi
-done
+            while ! [ install_result = 0 ]:
+            do 
+                echo "❌  Pngcrush installation failed. Do you want to try again? (y/n)"
+                read "pngcrush_install_again?Choise: "
+                if [ "$pngcrush_install_again" = "y" ]
+                    replace_pngcrush
+                    install_result=$?
+                fi
+                if [ "$pngcrush_install_again" = "n" ]
+                    install_result=0
+                fi
+        done
+    fi
+fi
 
 codesign -f -s $IDENTITY "$XCODE/Contents/SharedFrameworks/DVTKit.framework"
 codesign -f -s $IDENTITY "$XCODE"
