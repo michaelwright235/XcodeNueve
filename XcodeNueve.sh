@@ -39,12 +39,14 @@ if [ "$#" -eq 0 ]; then
         XCODE="$PWD/Xcode9.app"
     fi
 
-    read -p "Path to Xcode 9.4.1 [$XCODE]: " TMPINPUT
+    echo -n "Path to Xcode 9.4.1 [$XCODE]: "
+    read TMPINPUT
     if [ ! -z "$TMPINPUT" ]; then
         XCODE="$TMPINPUT"
     fi
 
-    read -p "Signing identity to use [$IDENTITY]: " TMPINPUT
+    echo -n "Signing identity to use [$IDENTITY]: "
+    read TMPINPUT
     if [ ! -z "$TMPINPUT" ]; then
         IDENTITY="$TMPINPUT"
     fi
@@ -166,8 +168,9 @@ python2() {
 
     local result=0
     while :
-    do 
-        read "python2_user_choise?Choise: "
+    do
+        echo -n "Choise: "
+        read python2_user_choise
         if [ "$python2_user_choise" = "1" ]; then
             python2_install
             result=$?
@@ -192,9 +195,10 @@ else
         python2
         install_result=$?
         while ! [ install_result = 0 ]:
-        do 
+        do
             echo "❌  Python 2 installation failed. Do you want to try again? (y/n)"
-            read "python2_install_again?Choise: "
+            echo -n "Choise: "
+            read python2_install_again
             if [ "$python2_install_again" = "y" ]
                 python2
                 install_result=$?
@@ -259,9 +263,10 @@ else
             replace_pngcrush
             install_result=$?
             while ! [ install_result = 0 ]:
-            do 
+            do
                 echo "❌  Pngcrush installation failed. Do you want to try again? (y/n)"
-                read "pngcrush_install_again?Choise: "
+                echo -n "Choise: "
+                read pngcrush_install_again
                 if [ "$pngcrush_install_again" = "y" ]
                     replace_pngcrush
                     install_result=$?
