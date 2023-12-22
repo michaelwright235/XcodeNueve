@@ -190,22 +190,20 @@ python2() {
 if [ -d "/Library/Frameworks/Python.framework/Versions/2.7" ]; then
     echo "✅  Python 2 Framework is already installed"
 else
-    while :
+    python2
+    install_result=$?
+    while ! [ install_result = 0 ]:
     do
-        python2
-        install_result=$?
-        while ! [ install_result = 0 ]:
-        do
-            echo "❌  Python 2 installation failed. Do you want to try again? (y/n)"
-            echo -n "Choise: "
-            read python2_install_again
-            if [ "$python2_install_again" = "y" ]
-                python2
-                install_result=$?
-            fi
-            if [ "$python2_install_again" = "n" ]
-                install_result=0
-            fi
+        echo "❌  Python 2 installation failed. Do you want to try again? (y/n)"
+        echo -n "Choise: "
+        read python2_install_again
+        if [ "$python2_install_again" = "y" ]; then
+            python2
+            install_result=$?
+        fi
+        if [ "$python2_install_again" = "n" ]; then
+            install_result=0
+        fi
     done
 fi
 
@@ -258,22 +256,20 @@ else
         echo "✅  Pngcrush has been replaced with a version from a newer Xcode"
     else
         echo "❌  Unable to find another Xcode to copy pngcrush from. Trying to download and compile it from sources..."
-        while :
+        replace_pngcrush
+        install_result=$?
+        while ! [ install_result = 0 ]:
         do
-            replace_pngcrush
-            install_result=$?
-            while ! [ install_result = 0 ]:
-            do
-                echo "❌  Pngcrush installation failed. Do you want to try again? (y/n)"
-                echo -n "Choise: "
-                read pngcrush_install_again
-                if [ "$pngcrush_install_again" = "y" ]
-                    replace_pngcrush
-                    install_result=$?
-                fi
-                if [ "$pngcrush_install_again" = "n" ]
-                    install_result=0
-                fi
+            echo "❌  Pngcrush installation failed. Do you want to try again? (y/n)"
+            echo -n "Choise: "
+            read pngcrush_install_again
+            if [ "$pngcrush_install_again" = "y" ]; then
+                replace_pngcrush
+                install_result=$?
+            fi
+            if [ "$pngcrush_install_again" = "n" ]; then
+                install_result=0
+            fi
         done
     fi
 fi
