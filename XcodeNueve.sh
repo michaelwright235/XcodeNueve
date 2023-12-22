@@ -108,7 +108,7 @@ fi
 python2_install() {
     echo "Downloading Python 2.7.18..." 
     # Download Python 2.7.18 installer to use a part of it for making a working dependency
-    local python_tmp_dir="$TMPDIR/python2.7-installer"
+    local python_tmp_dir="${TMPDIR}python2.7-installer"
     local python_install_dir="/Library/Frameworks/Python.framework/"
     # Delete previous temp dir if it exists
     remove_dir_if_exists "$python_tmp_dir"
@@ -119,17 +119,16 @@ python2_install() {
         return 1
     fi
     xar -C $python_tmp_dir -xf "$python_tmp_dir/python2.pkg"
+    python_install_dir="/Library/Frameworks/Python.framework/Versions/2.7"
     if [ -d "/Library/Frameworks/Python.framework/" ]; then
         # If some Python version is alreary installed,
         # we copy Python 2.7 files to Python.framework/Versions/2.7/
-        python_install_dir="/Library/Frameworks/Python.framework/Versions/2.7/"
-        payload_extracted="$python_tmp_dir/Python_Framework.pkg/Payload/extracted"
+        payload_extracted="$python_tmp_dir/Python_Framework.pkg/extracted"
         mkdir "$payload_extracted"
         tar xvf "$python_tmp_dir/Python_Framework.pkg/Payload" -C "$payload_extracted" &> /dev/null
-        sudo -- zsh -c <<EOF
-        mkdir "$python_install_dir"
-        mv "$payload_extracted/Versions/2.7/*" "$python_install_dir"
-EOF
+        sudo mkdir "$python_install_dir"
+        sudo mv ${payload_extracted}/Versions/2.7/* $python_install_dir
+
         if ! [ $? = 0 ]; then
             echo "❌  Something went wrong during installing Python 2."
             return 1
@@ -139,7 +138,7 @@ EOF
         # If Python isn't installed,
         # we copy all Python 2.7 files to Python.framework
         sudo -- zsh -c <<EOF
-        mkdir "$python_install_dir"
+        mkdir -p "$python_install_dir"
         tar xvf "$python_tmp_dir/Python_Framework.pkg/Payload" -C $python_install_dir &> /dev/null
 EOF
     fi
@@ -158,16 +157,16 @@ python2() {
     # just download it and put inside of /Library/Frameworks/Python.framework/ directory.
     echo "❓ Do you want to install Python 2 Framework?"
     echo "Doing that will likely decrease your system security \
-    because Python 2 is not being maintainted since 2020. If you don't install it, \
-    Xcode 9 UI and ipatool (may be needed to build iOS apps) won't work. \
-    To make build tools work LLDB.framework and DebuggerLLDB.ideplugin will be deleted. \n\
-    If you choose to install, don't forget to delete it when you're done \
-    (/Library/Frameworks/Python.framework/Versions/2.7/)."
+because Python 2 is not being maintainted since 2020. If you don't install it, \
+Xcode 9 UI and ipatool (may be needed to build iOS apps) won't work. \
+To make build tools work LLDB.framework and DebuggerLLDB.ideplugin will be deleted. \
+If you choose to install, don't forget to delete it when you're done \
+(/Library/Frameworks/Python.framework/Versions/2.7/).\n"
     echo "1️⃣  Install Python 2 Framework (root privilages might be required)"
     echo "2️⃣  Don't install Python 2 Framework"
 
     local result=0
-    while :
+    while true;
     do
         echo -n "Choise: "
         read python2_user_choise
@@ -184,7 +183,7 @@ python2() {
             break
         fi
     done
-    return "$result"
+    return $result
 }
 
 if [ -d "/Library/Frameworks/Python.framework/Versions/2.7" ]; then
@@ -192,7 +191,8 @@ if [ -d "/Library/Frameworks/Python.framework/Versions/2.7" ]; then
 else
     python2
     install_result=$?
-    while ! [ install_result = 0 ]:
+    echo $install_result
+    while ! [ $install_result = 0 ];
     do
         echo "❌  Python 2 installation failed. Do you want to try again? (y/n)"
         echo -n "Choise: "
@@ -258,7 +258,7 @@ else
         echo "❌  Unable to find another Xcode to copy pngcrush from. Trying to download and compile it from sources..."
         replace_pngcrush
         install_result=$?
-        while ! [ install_result = 0 ]:
+        while ! [ $install_result = 0 ];
         do
             echo "❌  Pngcrush installation failed. Do you want to try again? (y/n)"
             echo -n "Choise: "
