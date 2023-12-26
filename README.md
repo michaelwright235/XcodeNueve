@@ -28,7 +28,7 @@ The only thing I found not working is iPhone Simulator.
    4. You should now have a self-signed code signing certificate in the "login" keychain.
 3. On macOS Ventura and later, you will need to give Terminal.app "App Management" permissions in the Privacy & Security pane of System Settings. This permission can be removed after the script is successfully run.
 4. Run the script from this repository and follow the prompts:
-   `/bin/sh -c "$(curl -fsSL https://raw.githubusercontent.com/mrpippy/XcodeNueve/master/XcodeNueve.sh)"`
+   `/bin/zsh -c "$(curl -fsSL https://raw.githubusercontent.com/michaelwright235/XcodeNueve/main/XcodeNueve.sh)"`
 
 ## How do I use it?
 
