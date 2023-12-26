@@ -277,9 +277,9 @@ else
     fi
 fi
 
-codesign -f -s $IDENTITY "$XCODE/Contents/SharedFrameworks/DVTKit.framework"
-codesign -f -s $IDENTITY "$XCODE"
-codesign -f -s $IDENTITY "$XCODE/Contents/SharedFrameworks/DVTDocumentation.framework"
-codesign -f -s $IDENTITY "$XCODE/Contents/Frameworks/IDEFoundation.framework"
-codesign -f -s $IDENTITY "$XCODE/Contents/Developer/usr/bin/xcodebuild"
-codesign -f -s $IDENTITY "$XCODE/Contents/SharedFrameworks/LLDB.framework"
+codesign -f -s "$IDENTITY" "$XCODE/Contents/SharedFrameworks/DVTKit.framework"
+codesign -f -s "$IDENTITY" "$XCODE"
+codesign -f -s "$IDENTITY" "$XCODE/Contents/SharedFrameworks/DVTDocumentation.framework"
+codesign -f -s "$IDENTITY" "$XCODE/Contents/Frameworks/IDEFoundation.framework"
+codesign -f -s "$IDENTITY" "$XCODE/Contents/Developer/usr/bin/xcodebuild"
+codesign -f -s "$IDENTITY" "$XCODE/Contents/SharedFrameworks/LLDB.framework"
