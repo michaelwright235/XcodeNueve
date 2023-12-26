@@ -1,6 +1,6 @@
 # XcodeNueve 🛠 9️⃣
 
-A hack allowing the use of Xcode 9 including UI and its toolchain on macOS Catalina, Big Sur, Monterey, Ventura and Sonoma.
+A hack allowing the use of Xcode 9's UI and its toolchain on macOS Catalina, Big Sur, Monterey, Ventura and Sonoma.
 
 ![Demo of building an i386 binary on macOS 11.0 and Apple Silicon](demo.gif)
 
@@ -38,6 +38,7 @@ Any simulators and Interface Builder don't work.
 * Building i386 binaries is considered cross-compiling, and may need additional options passed to a `configure` script/build system.
 * For example, here's a typical invocation of `configure` on Apple Silicon:
   `arch -x86_64 ./configure --host=i386-apple-darwin CC="env DEVELOPER_DIR=/Applications/Xcode9.app SDKROOT=/Applications/Xcode9.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.13.sdk clang -arch i386"`
+* If you want to run Xcode 9 UI you need to execute `/Applications/Xcode9.app/Contents/MacOS/Xcode`  manually. If you try opening Xcode normally, macOS complains that it's outdated.
 
 ## Details
 
