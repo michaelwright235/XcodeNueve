@@ -16,7 +16,7 @@ Xcode 9 also may be useful for building old Swift projects.
 
 ## What doesn't work?
 
-The only thing I found not working is iPhone Simulator.
+Any simulators and Interface Builder don't work.
 
 ## Tell me how!
 
